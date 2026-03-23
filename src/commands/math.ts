@@ -484,6 +484,18 @@ function bindBinaryOperator(
     );
 }
 
+// Walk up the tree from a node to find the nearest MathVariantBlock ancestor,
+// returning its variant string, or null if none.
+function getVariantContext(node: MQNode): string | null {
+  var p: MQNode | null = node.parent;
+  while (p) {
+    var v = (p as any)._variant;
+    if (typeof v === 'string') return v;
+    p = p.parent;
+  }
+  return null;
+}
+
 /**
  * Children and parent of MathCommand's. Basically partitions all the
  * symbols and operators that descend (in the Math DOM tree) from
@@ -632,9 +644,20 @@ class MathBlock extends MathElement {
   }
   chToCmd(ch: string, options: CursorOptions) {
     var cons;
-    // exclude f because it gets a dedicated command with more spacing
-    if (ch.match(/^[a-eg-zA-Z]$/)) return new Letter(ch);
-    else if (/^\d$/.test(ch)) return new Digit(ch);
+    var variantCtx = getVariantContext(this);
+    if (ch.match(/^[a-zA-Z]$/)) {
+      if (variantCtx) return new VariantChar(ch, ch.charCodeAt(0), variantCtx);
+      return new Letter(ch);
+    } else if (/^\d$/.test(ch)) {
+      if (variantCtx) {
+        // bold-italic has no digit variant; fall back to bold
+        var digitVariant = variantCtx === 'bold-italic' ? 'bold' : variantCtx;
+        var varCode = toMathVariant(ch.charCodeAt(0), digitVariant);
+        if (varCode !== ch.charCodeAt(0))
+          return new VariantChar(ch, ch.charCodeAt(0), digitVariant);
+      }
+      return new Digit(ch);
+    }
     else if (options && options.typingSlashWritesDivisionSymbol && ch === '/')
       return (LatexCmds as LatexCmdsSingleCharBuilder)['÷'](ch);
     else if (options && options.typingAsteriskWritesTimesSymbol && ch === '*')

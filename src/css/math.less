@@ -132,35 +132,21 @@
     min-width: 1ex;
   }
 
-  .mq-font {
-    font: 1em @times;
-
-    * {
-      font-family: inherit;
-      font-style: inherit;
-    }
-  }
-
   // TODO [Han]: Why do we have to special-case .font?
   b,
   b.mq-font {
     font-weight: bolder;
   }
 
-  var,
+  var {
+    font-style: normal;
+  }
+
   i,
   i.mq-font {
     font-style: italic;
   }
 
-  var.mq-f {
-    margin-right: 0.2em;
-    margin-left: 0.1em;
-  }
-
-  .mq-roman var.mq-f {
-    margin: 0;
-  }
 
   big {
     font-size: 200%;
@@ -306,8 +292,6 @@
   // non-italicized operator names
   // like \sin, \cos, \ln, etc.
   .mq-operator-name {
-    font-family: Symbola, 'Times New Roman', serif;
-    line-height: 0.9;
     font-style: normal;
   }
   var.mq-operator-name.mq-first {

@@ -422,7 +422,7 @@ class Letter extends Variable {
   endsWord?: string;
 
   constructor(ch: string) {
-    super(ch);
+    super(ch, h.text(toMathVariantStr(ch, 'italic')));
     this.letter = ch;
   }
   checkAutoCmds(cursor: Cursor) {
@@ -511,6 +511,10 @@ class Letter extends Variable {
       delete this.endsCategory;
       delete this.endsWord;
     }
+    var displayStr = bool ? toMathVariantStr(this.letter, 'italic') : this.letter;
+    this.domFrag().eachElement(function(el) {
+      if (el.firstChild) el.firstChild.textContent = displayStr;
+    });
     this.domFrag().toggleClass('mq-operator-name', !bool);
     return this;
   }
@@ -834,25 +838,6 @@ LatexCmds.operatorname = class extends MathCommand {
   }
 };
 
-LatexCmds.f = class extends Letter {
-  letter: string;
-  constructor() {
-    var letter = 'f';
-    super(letter);
-
-    this.letter = letter;
-    this.domView = new DOMView(0, () =>
-      h('var', { class: 'mq-f' }, [h.text('f')])
-    );
-  }
-  italicize(bool: boolean) {
-    // Why is this necesssary? Does someone replace the `f` at some
-    // point?
-    this.domFrag().eachElement((el) => (el.textContent = 'f'));
-    this.domFrag().toggleClass('mq-f', bool);
-    return super.italicize(bool);
-  }
-};
 
 // VanillaSymbol's
 LatexCmds[' '] = LatexCmds.space = () =>
@@ -946,7 +931,19 @@ LatexCmds['⟂'] = LatexCmds.perp = bindVanillaSymbol(
 
 //lowercase Greek letter variables
 
+// Code points for standard lowercase Greek letters (U+03B1–U+03C9 range)
+// that have math italic Unicode variants via toMathVariantStr.
+var GREEK_LOWER_CP: { [name: string]: number } = {
+  alpha: 0x3b1, beta: 0x3b2, gamma: 0x3b3, delta: 0x3b4, zeta: 0x3b6,
+  eta: 0x3b7, theta: 0x3b8, iota: 0x3b9, kappa: 0x3ba, lambda: 0x3bb,
+  mu: 0x3bc, nu: 0x3bd, xi: 0x3be, pi: 0x3c0, rho: 0x3c1,
+  sigma: 0x3c3, tau: 0x3c4, upsilon: 0x3c5, phi: 0x3c6, chi: 0x3c7,
+  psi: 0x3c8, omega: 0x3c9,
+};
+
 function bindLowercaseGreek(latex: string) {
+  var cp = GREEK_LOWER_CP[latex];
+  if (cp) return () => new VariantChar('\\' + latex + ' ', cp, 'italic');
   return bindVariable('\\' + latex + ' ', '&' + latex + ';', latex);
 }
 
@@ -959,9 +956,11 @@ LatexCmds['η'] = LatexCmds.eta = bindLowercaseGreek('eta');
 LatexCmds['θ'] = LatexCmds.theta = bindLowercaseGreek('theta');
 LatexCmds['ι'] = LatexCmds.iota = bindLowercaseGreek('iota');
 LatexCmds['κ'] = LatexCmds.kappa = bindLowercaseGreek('kappa');
+LatexCmds['λ'] = LatexCmds.lambda = bindLowercaseGreek('lambda');
 LatexCmds['μ'] = LatexCmds.mu = bindLowercaseGreek('mu');
 LatexCmds['ν'] = LatexCmds.nu = bindLowercaseGreek('nu');
 LatexCmds['ξ'] = LatexCmds.xi = bindLowercaseGreek('xi');
+LatexCmds['π'] = LatexCmds.pi = bindLowercaseGreek('pi');
 LatexCmds['ρ'] = LatexCmds.rho = bindLowercaseGreek('rho');
 LatexCmds['σ'] = LatexCmds.sigma = bindLowercaseGreek('sigma');
 LatexCmds['τ'] = LatexCmds.tau = bindLowercaseGreek('tau');
@@ -970,55 +969,41 @@ LatexCmds['ψ'] = LatexCmds.psi = bindLowercaseGreek('psi');
 LatexCmds['ω'] = LatexCmds.omega = bindLowercaseGreek('omega');
 
 //why can't anybody FUCKING agree on these
-LatexCmds['ϕ'] = LatexCmds.phi = bindVariable('\\phi ', '&#981;', 'phi'); //W3C or Unicode?
+LatexCmds['ϕ'] = LatexCmds.phi = () => new VariantChar('\\phi ', 0x3D5, 'italic'); //W3C or Unicode?
 
 LatexCmds['φ'] =
   LatexCmds.phiv =
   LatexCmds.varphi =
-    bindVariable('\\varphi ', '&phi;', 'phi'); //Elsevier and 9573-13 //AMS and LaTeX
+    () => new VariantChar('\\varphi ', 0x3c6, 'italic'); //Elsevier and 9573-13 //AMS and LaTeX
 
-LatexCmds['ϵ'] = LatexCmds.epsilon = bindVariable(
-  '\\epsilon ',
-  '&#1013;',
-  'epsilon'
-); //W3C or Unicode?
+LatexCmds['ϵ'] = LatexCmds.epsilon = () => new VariantChar('\\epsilon ', 0x3F5, 'italic'); //W3C or Unicode?
 
 LatexCmds['ε'] =
   LatexCmds.epsiv =
   LatexCmds.varepsilon =
-    bindVariable(
-      //Elsevier and 9573-13 //AMS and LaTeX
-      '\\varepsilon ',
-      '&epsilon;',
-      'epsilon'
-    );
+    () => new VariantChar('\\varepsilon ', 0x3b5, 'italic'); //Elsevier and 9573-13 //AMS and LaTeX
 
 LatexCmds['ϖ'] =
   LatexCmds.piv =
   LatexCmds.varpi =
-    bindVariable('\\varpi ', '&piv;', 'piv'); //W3C/Unicode and Elsevier and 9573-13 //AMS and LaTeX
+    () => new VariantChar('\\varpi ', 0x3D6, 'italic'); //W3C/Unicode and Elsevier and 9573-13 //AMS and LaTeX
 
 LatexCmds['ς'] = // Unicode
   LatexCmds.sigmaf = //W3C/Unicode
   LatexCmds.sigmav = //Elsevier
   LatexCmds.varsigma = //LaTeX
-    bindVariable('\\varsigma ', '&sigmaf;', 'sigma');
+    () => new VariantChar('\\varsigma ', 0x3C2, 'italic');
 
 LatexCmds['ϑ'] = // Unicode
   LatexCmds.thetav = //Elsevier and 9573-13
   LatexCmds.vartheta = //AMS and LaTeX
   LatexCmds.thetasym = //W3C/Unicode
-    bindVariable('\\vartheta ', '&thetasym;', 'theta');
+    () => new VariantChar('\\vartheta ', 0x3D1, 'italic');
 
 LatexCmds['υ'] =
   LatexCmds.upsilon =
   LatexCmds.upsi =
-    bindVariable(
-      //AMS and LaTeX and W3C/Unicode //Elsevier and 9573-13
-      '\\upsilon ',
-      '&upsilon;',
-      'upsilon'
-    );
+    () => new VariantChar('\\upsilon ', 0x3c5, 'italic'); //AMS and LaTeX and W3C/Unicode //Elsevier and 9573-13
 
 //these aren't even mentioned in the HTML character entity references
 LatexCmds['Ϝ'] =
@@ -1030,43 +1015,26 @@ LatexCmds['Ϝ'] =
 LatexCmds['ϰ'] =
   LatexCmds.kappav =
   LatexCmds.varkappa =
-    bindVariable(
-      //Elsevier //AMS and LaTeX
-      '\\varkappa ',
-      '&#1008;',
-      'kappa'
-    );
+    () => new VariantChar('\\varkappa ', 0x3F0, 'italic'); //Elsevier //AMS and LaTeX
 
 LatexCmds['ϱ'] =
   LatexCmds.rhov =
   LatexCmds.varrho =
-    bindVariable('\\varrho ', '&#1009;', 'rho'); //Elsevier and 9573-13 //AMS and LaTeX
-
-//Greek constants, look best in non-italicized Times New Roman
-LatexCmds.pi = LatexCmds['π'] = () =>
-  new NonSymbolaSymbol('\\pi ', h.entityText('&pi;'), 'pi');
-LatexCmds['λ'] = LatexCmds.lambda = () =>
-  new NonSymbolaSymbol('\\lambda ', h.entityText('&lambda;'), 'lambda');
+    () => new VariantChar('\\varrho ', 0x3F1, 'italic'); //Elsevier and 9573-13 //AMS and LaTeX
 
 //uppercase greek letters
 
-LatexCmds['Υ'] =
-  LatexCmds.Upsilon = //LaTeX
-  LatexCmds.Upsi = //Elsevier and 9573-13
-  LatexCmds.upsih = //W3C/Unicode "upsilon with hook"
-  LatexCmds.Upsih = //'cos it makes sense to me
-    () =>
-      new MQSymbol(
-        '\\Upsilon ',
-        h('var', { style: 'font-family: serif' }, [h.entityText('&upsih;')]),
-        'capital upsilon'
-      ); //Symbola's 'upsilon with a hook' is a capital Y without hooks :(
-
 //other symbols with the same LaTeX command and HTML character entity reference
 
+var GREEK_UPPER_CP: { [name: string]: number } = {
+  Gamma: 0x393, Delta: 0x394, Theta: 0x398, Lambda: 0x39B, Xi: 0x39E,
+  Pi: 0x3A0, Sigma: 0x3A3, Upsilon: 0x3A5, Phi: 0x3A6, Psi: 0x3A8, Omega: 0x3A9,
+};
+
 function bindUppercaseGreek(latex: string) {
-  return () =>
-    new VanillaSymbol('\\' + latex + ' ', h.entityText('&' + latex + ';'));
+  var cp = GREEK_UPPER_CP[latex];
+  if (cp) return () => new VariantChar('\\' + latex + ' ', cp, 'italic');
+  return () => new VanillaSymbol('\\' + latex + ' ', h.entityText('&' + latex + ';'));
 }
 
 LatexCmds['Γ'] = LatexCmds.Gamma = bindUppercaseGreek('Gamma');
@@ -1076,6 +1044,8 @@ LatexCmds['Λ'] = LatexCmds.Lambda = bindUppercaseGreek('Lambda');
 LatexCmds['Ξ'] = LatexCmds.Xi = bindUppercaseGreek('Xi');
 LatexCmds['Π'] = LatexCmds.Pi = bindUppercaseGreek('Pi');
 LatexCmds['Σ'] = LatexCmds.Sigma = bindUppercaseGreek('Sigma');
+LatexCmds['Υ'] = LatexCmds.Upsilon = LatexCmds.Upsi = LatexCmds.upsih = LatexCmds.Upsih =
+  bindUppercaseGreek('Upsilon');
 LatexCmds['Φ'] = LatexCmds.Phi = bindUppercaseGreek('Phi');
 LatexCmds['Ψ'] = LatexCmds.Psi = bindUppercaseGreek('Psi');
 LatexCmds['Ω'] = LatexCmds.Omega = bindUppercaseGreek('Omega');

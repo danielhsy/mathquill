@@ -28,6 +28,7 @@ BASE_SOURCES = \
   $(SRC_DIR)/utils.ts \
   $(SRC_DIR)/dom.ts \
   $(SRC_DIR)/unicode.ts \
+  $(SRC_DIR)/mathVariantMap.ts \
 	$(SRC_DIR)/browser.ts \
   $(SRC_DIR)/animate.ts \
   $(SRC_DIR)/services/aria.ts \
@@ -66,8 +67,6 @@ CSS_DIR = $(SRC_DIR)/css
 CSS_MAIN = $(CSS_DIR)/main.less
 CSS_SOURCES = $(shell find $(CSS_DIR) -name '*.less')
 
-FONT_SOURCE = $(SRC_DIR)/fonts
-FONT_TARGET = $(BUILD_DIR)/fonts
 
 TEST_SUPPORT = ./test/support/assert.ts ./test/support/trigger-event.ts ./test/support/jquery-stub.ts
 UNIT_TESTS = ./test/unit/*.test.js ./test/unit/*.test.ts
@@ -108,16 +107,15 @@ BUILD_DIR_EXISTS = $(BUILD_DIR)/.exists--used_by_Makefile
 # -*- Build tasks -*-
 #
 
-.PHONY: all basic dev js uglify css font clean setup-gitconfig prettify-all
-all: font css uglify
+.PHONY: all basic dev js uglify css clean setup-gitconfig prettify-all
+all: css uglify
 basic: $(UGLY_BASIC_JS) $(BASIC_CSS)
 unminified_basic: $(BASIC_JS) $(BASIC_CSS)
 # dev is like all, but without minification
-dev: font css js
+dev: css js
 js: $(BUILD_JS)
 uglify: $(UGLY_JS)
 css: $(BUILD_CSS)
-font: $(FONT_TARGET)
 clean:
 	rm -rf $(BUILD_DIR)
 # This adds an entry to your local .git/config file that looks like this:
@@ -163,10 +161,6 @@ $(NODE_MODULES_INSTALLED): package.json
 $(BUILD_DIR_EXISTS):
 	mkdir -p $(BUILD_DIR)
 	touch $(BUILD_DIR_EXISTS)
-
-$(FONT_TARGET): $(FONT_SOURCE) $(BUILD_DIR_EXISTS)
-	rm -rf $@
-	cp -r $< $@
 
 #
 # -*- Test tasks -*-

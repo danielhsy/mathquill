@@ -136,30 +136,175 @@ class Style extends MathCommand {
   }
 }
 
-//fonts
-LatexCmds.mathrm = class extends Style {
-  constructor() {
-    super('\\mathrm', 'span', { class: 'mq-roman mq-font' }, 'Roman Font', {
-      shouldNotSpeakDelimiters: true
+// A character rendered as a Unicode math variant. Stores the source BMP code
+// point so it can be re-mapped when nested inside a different font command.
+// Extends Variable (not Letter) to avoid auto-operator-name detection.
+class VariantChar extends Variable {
+  sourceCP: number;
+  constructor(ctrlSeq: string, cp: number, variant: string) {
+    super(ctrlSeq, h.text(toMathVariantStr(cp, variant)));
+    this.sourceCP = cp;
+  }
+}
+
+// A MathBlock that creates VariantChar nodes when characters are typed.
+class MathVariantBlock extends MathBlock {
+  _variant: string;
+  constructor(variant: string) {
+    super();
+    this._variant = variant;
+  }
+  write(cursor: Cursor, ch: string) {
+    var code = ch.charCodeAt(0);
+    var varCode = toMathVariant(code, this._variant);
+    if (varCode !== code) {
+      var cmd: MathCommand = new VariantChar(ch, code, this._variant);
+      if (cursor.selection) cmd.replaces(cursor.replaceSelection()!);
+      if (!cursor.isTooDeep()) cmd.createLeftOf(cursor.show());
+    } else {
+      super.write(cursor, ch);
+    }
+  }
+  writeLatex(cursor: Cursor, latex: string) {
+    var block = latexMathParser
+      .skip(Parser.eof)
+      .or(Parser.all.result<false>(false))
+      .parse(latex);
+    if (block && !block.isEmpty() && block.prepareInsertionAt(cursor)) {
+      applyVariantToBlock(block, this._variant);
+      block
+        .children()
+        .adopt(cursor.parent, cursor[L] as NodeRef, cursor[R] as NodeRef);
+      domFrag(block.html()).insertBefore(cursor.domFrag());
+      cursor[L] = block.getEnd(R);
+      block.finalizeInsert(cursor.options, cursor);
+      var blockEndsR = block.getEnd(R);
+      var blockEndsL = block.getEnd(L);
+      var blockEndsRR = (blockEndsR as MQNode)[R];
+      var blockEndsLL = (blockEndsL as MQNode)[L];
+      if (blockEndsRR) blockEndsRR.siblingCreated(cursor.options, L);
+      if (blockEndsLL) blockEndsLL.siblingCreated(cursor.options, R);
+      cursor.parent.bubble(function (node) {
+        node.reflow();
+        return undefined;
+      });
+    }
+  }
+}
+
+// Recursively replace Letter/Digit/VariantChar nodes with VariantChar nodes.
+function applyVariantToBlock(block: MathBlock, variant: string) {
+  var children: MQNode[] = [];
+  block.children().each(function (child) {
+    children.push(child);
+    return undefined;
+  });
+
+  for (var i = 0; i < children.length; i++) {
+    var child = children[i];
+    if (child instanceof Letter) {
+      var lSib = child[L] as NodeRef;
+      var rSib = child[R] as NodeRef;
+      var par = child.parent!;
+      child.disown();
+      new VariantChar(child.letter, child.letter.charCodeAt(0), variant).adopt(
+        par,
+        lSib,
+        rSib
+      );
+    } else if (child instanceof Digit) {
+      var digitChar = child.ctrlSeq || '';
+      var digitVariant = variant === 'bold-italic' ? 'bold' : variant;
+      var varCode = toMathVariant(digitChar.charCodeAt(0), digitVariant);
+      if (varCode !== digitChar.charCodeAt(0)) {
+        var lSib2 = child[L] as NodeRef;
+        var rSib2 = child[R] as NodeRef;
+        var par2 = child.parent!;
+        child.disown();
+        new VariantChar(digitChar, digitChar.charCodeAt(0), digitVariant).adopt(
+          par2,
+          lSib2,
+          rSib2
+        );
+      }
+    } else if (child instanceof VariantChar) {
+      var lSibV = child[L] as NodeRef;
+      var rSibV = child[R] as NodeRef;
+      var parV = child.parent!;
+      child.disown();
+      new VariantChar(child.ctrlSeq || '', child.sourceCP, variant).adopt(
+        parV,
+        lSibV,
+        rSibV
+      );
+    } else {
+      // Recurse into nested commands (e.g. \frac, \sqrt)
+      var cmd = child as MathCommand;
+      if (cmd.blocks) {
+        for (var j = 0; j < cmd.blocks.length; j++) {
+          applyVariantToBlock(cmd.blocks[j], variant);
+        }
+      }
+    }
+  }
+}
+
+// A font-style command that maps its children to Unicode math variant characters.
+class MathVariantStyle extends MathCommand {
+  private _variant: string;
+  constructor(ctrlSeq: string, variant: string, ariaLabel: string) {
+    super(
+      ctrlSeq,
+      new DOMView(1, (blocks) =>
+        h.block('span', { class: 'mq-font' }, blocks[0])
+      )
+    );
+    this._variant = variant;
+    this.ariaLabel = ariaLabel;
+    this.mathspeakTemplate = ['Start' + ariaLabel + ',', 'End' + ariaLabel];
+  }
+  createBlocks() {
+    var block = new MathVariantBlock(this._variant);
+    block.adopt(this, this.getEnd(R), 0);
+    this.blocks = [block];
+  }
+  parser() {
+    var self = this;
+    return latexMathParser.block.map(function (parsedBlock) {
+      var varBlock = new MathVariantBlock(self._variant);
+      varBlock.adopt(self, self.getEnd(R), 0);
+      self.blocks = [varBlock];
+
+      // Recursively convert all Letter/Digit nodes to variant form
+      applyVariantToBlock(parsedBlock, self._variant);
+
+      // Move all converted children into varBlock
+      parsedBlock.children().adopt(varBlock, varBlock.getEnd(R), 0);
+
+      return self;
     });
   }
-  isTextBlock() {
-    return true;
-  }
-};
+}
+
+//fonts
+LatexCmds.mathrm = () =>
+  new MathVariantStyle('\\mathrm', 'roman', 'Roman Font');
 LatexCmds.mathit = () =>
-  new Style('\\mathit', 'i', { class: 'mq-font' }, 'Italic Font');
+  new MathVariantStyle('\\mathit', 'italic', 'Italic Font');
 LatexCmds.mathbf = () =>
-  new Style('\\mathbf', 'b', { class: 'mq-font' }, 'Bold Font');
+  new MathVariantStyle('\\mathbf', 'bold', 'Bold Font');
 LatexCmds.mathsf = () =>
-  new Style(
-    '\\mathsf',
-    'span',
-    { class: 'mq-sans-serif mq-font' },
-    'Serif Font'
-  );
+  new MathVariantStyle('\\mathsf', 'sans-serif', 'Sans-serif Font');
 LatexCmds.mathtt = () =>
-  new Style('\\mathtt', 'span', { class: 'mq-monospace mq-font' }, 'Math Text');
+  new MathVariantStyle('\\mathtt', 'monospace', 'Monospace Font');
+LatexCmds.boldsymbol = LatexCmds.bm = () =>
+  new MathVariantStyle('\\boldsymbol', 'bold-italic', 'Bold Italic Font');
+LatexCmds.mathbb = () =>
+  new MathVariantStyle('\\mathbb', 'double-struck', 'Double-struck Font');
+LatexCmds.mathfrak = () =>
+  new MathVariantStyle('\\mathfrak', 'fraktur', 'Fraktur Font');
+LatexCmds.mathscr = LatexCmds.mathcal = () =>
+  new MathVariantStyle('\\mathscr', 'script', 'Script Font');
 //text-decoration
 LatexCmds.underline = () =>
   new Style(
