@@ -147,6 +147,17 @@ class VariantChar extends Variable {
   }
 }
 
+// A digit rendered as a Unicode math variant. Extends Digit so it keeps the
+// `<span class="mq-digit">` wrapper instead of becoming a `<var>`.
+class VariantDigit extends Digit {
+  sourceCP: number;
+  constructor(ctrlSeq: string, cp: number, variant: string) {
+    super(toMathVariantStr(cp, variant));
+    this.ctrlSeq = ctrlSeq;
+    this.sourceCP = cp;
+  }
+}
+
 // A MathBlock that creates VariantChar nodes when characters are typed.
 class MathVariantBlock extends MathBlock {
   _variant: string;
@@ -158,7 +169,10 @@ class MathVariantBlock extends MathBlock {
     var code = ch.charCodeAt(0);
     var varCode = toMathVariant(code, this._variant);
     if (varCode !== code) {
-      var cmd: MathCommand = new VariantChar(ch, code, this._variant);
+      var isDigit = code >= 0x30 && code <= 0x39;
+      var cmd: MathCommand = isDigit
+        ? new VariantDigit(ch, code, this._variant)
+        : new VariantChar(ch, code, this._variant);
       if (cursor.selection) cmd.replaces(cursor.replaceSelection()!);
       if (!cursor.isTooDeep()) cmd.createLeftOf(cursor.show());
     } else {
@@ -212,6 +226,17 @@ function applyVariantToBlock(block: MathBlock, variant: string) {
         lSib,
         rSib
       );
+    } else if (child instanceof VariantDigit) {
+      var lSibVD = child[L] as NodeRef;
+      var rSibVD = child[R] as NodeRef;
+      var parVD = child.parent!;
+      var digitVariantR = variant === 'bold-italic' ? 'bold' : variant;
+      child.disown();
+      new VariantDigit(child.ctrlSeq || '', child.sourceCP, digitVariantR).adopt(
+        parVD,
+        lSibVD,
+        rSibVD
+      );
     } else if (child instanceof Digit) {
       var digitChar = child.ctrlSeq || '';
       var digitVariant = variant === 'bold-italic' ? 'bold' : variant;
@@ -221,7 +246,7 @@ function applyVariantToBlock(block: MathBlock, variant: string) {
         var rSib2 = child[R] as NodeRef;
         var par2 = child.parent!;
         child.disown();
-        new VariantChar(digitChar, digitChar.charCodeAt(0), digitVariant).adopt(
+        new VariantDigit(digitChar, digitChar.charCodeAt(0), digitVariant).adopt(
           par2,
           lSib2,
           rSib2
