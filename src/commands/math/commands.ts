@@ -277,11 +277,11 @@ function applyVariantToBlock(block: MathBlock, variant: string) {
 // A font-style command that maps its children to Unicode math variant characters.
 class MathVariantStyle extends MathCommand {
   private _variant: string;
-  constructor(ctrlSeq: string, variant: string, ariaLabel: string) {
+  constructor(ctrlSeq: string, variant: string, ariaLabel: string, htmlTag: string = 'span', extraClass: string = '') {
     super(
       ctrlSeq,
       new DOMView(1, (blocks) =>
-        h.block('span', { class: 'mq-font' }, blocks[0])
+        h.block(htmlTag as any, { class: 'mq-font' + (extraClass ? ' ' + extraClass : '') }, blocks[0])
       )
     );
     this._variant = variant;
@@ -312,24 +312,30 @@ class MathVariantStyle extends MathCommand {
 }
 
 //fonts
-LatexCmds.mathrm = () =>
-  new MathVariantStyle('\\mathrm', 'roman', 'Roman Font');
+LatexCmds.mathrm = class extends MathVariantStyle {
+  constructor() {
+    super('\\mathrm', 'roman', 'Roman Font', 'span', 'mq-roman');
+  }
+  isTextBlock() {
+    return true;
+  }
+};
 LatexCmds.mathit = () =>
-  new MathVariantStyle('\\mathit', 'italic', 'Italic Font');
+  new MathVariantStyle('\\mathit', 'italic', 'Italic Font', 'i');
 LatexCmds.mathbf = () =>
-  new MathVariantStyle('\\mathbf', 'bold', 'Bold Font');
+  new MathVariantStyle('\\mathbf', 'bold', 'Bold Font', 'b');
 LatexCmds.mathsf = () =>
-  new MathVariantStyle('\\mathsf', 'sans-serif', 'Sans-serif Font');
+  new MathVariantStyle('\\mathsf', 'sans-serif', 'Sans-serif Font', 'span', 'mq-sans-serif');
 LatexCmds.mathtt = () =>
-  new MathVariantStyle('\\mathtt', 'monospace', 'Monospace Font');
+  new MathVariantStyle('\\mathtt', 'monospace', 'Monospace Font', 'span', 'mq-monospace');
 LatexCmds.boldsymbol = LatexCmds.bm = () =>
-  new MathVariantStyle('\\boldsymbol', 'bold-italic', 'Bold Italic Font');
+  new MathVariantStyle('\\boldsymbol', 'bold-italic', 'Bold Italic Font', 'b', 'mq-boldsymbol');
 LatexCmds.mathbb = () =>
-  new MathVariantStyle('\\mathbb', 'double-struck', 'Double-struck Font');
+  new MathVariantStyle('\\mathbb', 'double-struck', 'Double-struck Font', 'span', 'mq-double-struck');
 LatexCmds.mathfrak = () =>
-  new MathVariantStyle('\\mathfrak', 'fraktur', 'Fraktur Font');
+  new MathVariantStyle('\\mathfrak', 'fraktur', 'Fraktur Font', 'span', 'mq-fraktur');
 LatexCmds.mathscr = LatexCmds.mathcal = () =>
-  new MathVariantStyle('\\mathscr', 'script', 'Script Font');
+  new MathVariantStyle('\\mathscr', 'script', 'Script Font', 'span', 'mq-script');
 //text-decoration
 LatexCmds.underline = () =>
   new Style(
@@ -550,7 +556,7 @@ class SupSub extends MathCommand {
     // creation of the HTML node, not for any updates.
     if (supsub === 'sub') {
       domView = new DOMView(1, (blocks) =>
-        h('span', { class: 'mq-supsub mq-non-leaf' }, [
+        h('span', { class: 'mq-supsub mq-non-leaf mq-sub-only' }, [
           h.block('span', { class: 'mq-sub' }, blocks[0]),
           h('span', { style: 'display:inline-block;width:0' }, [
             h.text(U_ZERO_WIDTH_SPACE)
@@ -801,6 +807,7 @@ class SupSub extends MathCommand {
           .oneElement()
       );
       NodeBase.linkElementByBlockNode(block.domFrag().oneElement(), block);
+      this.domFrag().removeClass('mq-sub-only');
     } else {
       this.sub = this.downInto = (this.sup as MQNode).downOutOf = block;
       block.adopt(this, 0, this.sup as MQNode).upOutOf = this.sup;
@@ -852,6 +859,8 @@ class SupSub extends MathCommand {
         delete (cmdOppositeSupsub as any).deleteOutOf; // TODO - refactor so this method can be optional
         if (supsub === 'sub') {
           cmd.domFrag().addClass('mq-sup-only').children().last().remove();
+        } else {
+          cmd.domFrag().addClass('mq-sub-only');
         }
         this.remove();
       };
