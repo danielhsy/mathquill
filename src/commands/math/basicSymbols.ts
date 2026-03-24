@@ -133,10 +133,9 @@ class DigitGroupingChar extends MQSymbol {
       if (dots[0] !== left) {
         DigitGroupingChar.addGroupingBetween(dots[0][L], left);
       }
-      if (dots[0] !== right) {
-        // we do not show grouping to the right of a decimal place #yet
-        // Remove the grouping for the decimal itself and the digits to the right.
-        DigitGroupingChar.removeGroupingBetween(dots[0], right);
+      dots[0].setGroupingClass(undefined);
+      if (dots[0] !== right && dots[0][R]) {
+        DigitGroupingChar.addGroupingAfterDecimal(dots[0][R], right);
       }
     } else {
       DigitGroupingChar.addGroupingBetween(right, left);
@@ -151,6 +150,33 @@ class DigitGroupingChar extends MQSymbol {
       }
       if (!node || node === right) break;
     } while ((node = node[R]));
+  }
+
+  // Works left-to-right, so `start` is the leftmost, and `end` is the rightmost.
+  // Groups of 3 from the left; space before the 4th, 7th, 10th... digit.
+  // Only groups if there are at least 4 digits (same threshold as addGroupingBetween).
+  static addGroupingAfterDecimal(start: NodeRef, end: NodeRef) {
+    var node = start;
+    var totalDigits = 0;
+    while (node) {
+      totalDigits += 1;
+      if (node === end) break;
+      node = node[R];
+    }
+
+    node = start;
+    var count = 0;
+    while (node) {
+      count += 1;
+      var cls: string | undefined = undefined;
+      if (totalDigits >= 4) {
+        cls =
+          count > 3 && (count - 1) % 3 === 0 ? 'mq-group-start' : 'mq-group-other';
+      }
+      if (node instanceof DigitGroupingChar) node.setGroupingClass(cls);
+      if (node === end) break;
+      node = node[R] as DigitGroupingChar;
+    }
   }
 
   // Works right-to-left, so `start` is the rightmost, and `end` is the leftmost.
@@ -247,7 +273,7 @@ class Digit extends DigitGroupingChar {
       cursor.insRightOf(cursor.parent.parent);
     } else super.createLeftOf(cursor);
   }
-  mathspeak(opts: MathspeakOptions) {
+  mathspeak(opts?: MathspeakOptions) {
     if (opts && opts.createdLeftOf) {
       var cursor = opts.createdLeftOf;
       var cursorL = cursor[L];
