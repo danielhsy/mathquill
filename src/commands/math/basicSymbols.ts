@@ -1268,7 +1268,7 @@ CharCmds['*'] =
   LatexCmds.cdot =
     bindBinaryOperator('\\cdot ', '&middot;', '*', 'times'); //semantically should be &sdot;, but &middot; looks better
 
-class To extends BinaryOperator {
+class To extends Relation {
   constructor() {
     super('\\to ', h.entityText('&rarr;'), 'to');
   }
@@ -1290,7 +1290,7 @@ class To extends BinaryOperator {
 
 LatexCmds['→'] = LatexCmds.to = To;
 
-class Inequality extends BinaryOperator {
+class Inequality extends Relation {
   strict: boolean;
   data: InequalityData;
 
@@ -1390,9 +1390,9 @@ LatexCmds['∞'] =
 LatexCmds['≠'] =
   LatexCmds.ne =
   LatexCmds.neq =
-    bindBinaryOperator('\\ne ', '&ne;', 'not equal');
+    bindRelation('\\ne ', '&ne;', 'not equal');
 
-class Equality extends BinaryOperator {
+class Equality extends Relation {
   constructor() {
     super('=', h.text('='), '=', 'equals');
   }
@@ -1422,7 +1422,7 @@ LatexCmds['÷'] =
   LatexCmds.divides =
     bindBinaryOperator('\\div ', '&divide;', '[/]', 'divided by');
 
-class Sim extends BinaryOperator {
+class Sim extends Relation {
   constructor() {
     super('\\sim ', h.text('~'), '~', 'tilde');
   }
@@ -1442,7 +1442,7 @@ class Sim extends BinaryOperator {
   }
 }
 
-class Approx extends BinaryOperator {
+class Approx extends Relation {
   constructor() {
     super('\\approx ', h.entityText('&approx;'), '≈', 'approximately equal');
   }
@@ -1506,7 +1506,7 @@ LatexCmds['△'] = LatexCmds.triangle = bindVanillaSymbol(
   'triangle'
 );
 
-LatexCmds['≅'] = LatexCmds.cong = bindBinaryOperator(
+LatexCmds['≅'] = LatexCmds.cong = bindRelation(
   '\\cong ',
   '&cong;',
   'cong',
@@ -1526,14 +1526,14 @@ LatexCmds['▱'] = LatexCmds.parallelogram = bindVanillaSymbol(
   'parallelogram'
 );
 
-LatexCmds['≇'] = LatexCmds.ncong = bindBinaryOperator(
+LatexCmds['≇'] = LatexCmds.ncong = bindRelation(
   '\\ncong ',
   '&ncong;',
   'ncong',
   'not congruent'
 );
 
-LatexCmds['≁'] = LatexCmds.nsim = bindBinaryOperator(
+LatexCmds['≁'] = LatexCmds.nsim = bindRelation(
   '\\nsim ',
   '&nsim;',
   'nsim',

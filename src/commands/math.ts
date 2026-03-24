@@ -443,7 +443,8 @@ class BinaryOperator extends MQSymbol {
     html?: ChildNode,
     text?: string,
     mathspeak?: string,
-    treatLikeSymbol?: boolean
+    treatLikeSymbol?: boolean,
+    cssClass: string = 'mq-binary-operator'
   ) {
     if (treatLikeSymbol) {
       super(
@@ -455,7 +456,7 @@ class BinaryOperator extends MQSymbol {
     } else {
       super(
         ctrlSeq,
-        h('span', { class: 'mq-binary-operator' }, html ? [html] : []),
+        h('span', { class: cssClass }, html ? [html] : []),
         text,
         mathspeak
       );
@@ -477,6 +478,26 @@ function bindBinaryOperator(
 ) {
   return () =>
     new BinaryOperator(
+      ctrlSeq,
+      htmlEntity ? h.entityText(htmlEntity) : undefined,
+      text,
+      mathspeak
+    );
+}
+
+class Relation extends BinaryOperator {
+  constructor(ctrlSeq?: string, html?: ChildNode, text?: string, mathspeak?: string) {
+    super(ctrlSeq, html, text, mathspeak, false, 'mq-relation');
+  }
+}
+function bindRelation(
+  ctrlSeq?: string,
+  htmlEntity?: string,
+  text?: string,
+  mathspeak?: string
+) {
+  return () =>
+    new Relation(
       ctrlSeq,
       htmlEntity ? h.entityText(htmlEntity) : undefined,
       text,
