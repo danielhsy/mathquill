@@ -145,21 +145,22 @@
   }
 
   .mq-int {
+    vertical-align: 0.1em;
+
     > big {
       display: inline-block;
     }
 
     > .mq-supsub {
-      font-size: 80%;
-      vertical-align: -1.1em;
+      vertical-align: -1.25em;
       padding-right: 0.2em;
 
       > .mq-sup > .mq-sup-inner {
-        vertical-align: 1.3em;
+        vertical-align: 1.5em;
       }
 
       > .mq-sub {
-        margin-left: -0.35em;
+        margin-left: -0.5em;
       }
     }
   }
@@ -207,7 +208,6 @@
   //   See also .fraction
   .mq-supsub {
     text-align: left;
-    font-size: 70%;
     vertical-align: -0.4em;
 
     &.mq-sup-only {
@@ -235,19 +235,12 @@
     .mq-binary-operator {
       padding: 0 0.1em;
     }
-
-    // special styles for fractions
-    // within sup/sub.
-    .mq-fraction {
-      font-size: 70%;
-    }
   }
 
   sup.mq-nthroot {
-    font-size: 80%;
     vertical-align: 0.8em;
-    margin-right: -0.6em;
-    margin-left: 0.2em;
+    margin-right: -1em;
+    margin-left: 0.5em;
     min-width: 0.5em;
   }
 
@@ -308,7 +301,6 @@
   //   obsoletes the &nbsp; in HTML template, but needs cross-browser
   //   testing. See also .supsub
   .mq-fraction {
-    font-size: 90%;
     text-align: center;
     vertical-align: -0.4em;
     padding: 0 0.1em;
@@ -395,6 +387,7 @@
     transform: scaleX(1.5);
     -moz-transform: scaleX(1.5);
     -o-transform: scaleX(1.5);
+    
     -webkit-transform: scaleX(1.5);
   }
 
@@ -403,20 +396,16 @@
   }
 
   .mq-large-operator {
-    padding: 0.2em;
+    padding: 0.1em;
     text-align: center;
 
     big {
-      margin: 0.2em 0;
+      margin: 0.25em 0;
     }
     .mq-from,
     big,
     .mq-to {
       display: block;
-    }
-    .mq-from,
-    .mq-to {
-      font-size: 80%;
     }
     .mq-from {
       float: right; /* take out of normal flow to manipulate baseline */
@@ -448,6 +437,108 @@
     padding-top: 0.2em;
     text-align: center;
     position: relative;
+  }
+
+  ////
+  ////
+  // Automatic math style propagation
+  // data-mathstyle is set by JS on .mq-fraction and .mq-supsub via getMathstyle().
+  // Values: T (fraction in D), S (fraction in T / supsub in D or T), SS (deeper)
+
+  // S and SS font sizes (relative to parent; correction rules below override as needed)
+  [data-mathstyle='S'] {
+    font-size: 70%;
+  }
+  [data-mathstyle='SS'] {
+    font-size: 50%; // fallback; correction rules below have higher specificity
+  }
+
+  // Correction: SS inside S (S is at 70% of root)
+  // 71.43% × 70% = 50% of root ✓
+  [data-mathstyle='S'] {
+    [data-mathstyle='SS'] {
+      font-size: 71.43%;
+    }
+  }
+
+  // Clamp: SS inside SS — prevent further shrinkage below 50%
+  // 100% × 50% = 50% ✓
+  [data-mathstyle='SS'] {
+    [data-mathstyle='SS'] {
+      font-size: 100%;
+    }
+  }
+
+  // Non-display contexts: large-operator limits beside the operator (flexbox).
+  // T = fraction in display context; S/SS = deeper nesting or supsub content.
+  // DOM order inside .mq-large-operator: .mq-to, big, .mq-from
+  // big is positioned absolutely at left; .mq-to/.mq-from form a flex column.
+  [data-mathstyle='T'],
+  [data-mathstyle='S'],
+  [data-mathstyle='SS'] {
+    .mq-int > .mq-supsub {
+      vertical-align: -0.5em;
+      & > .mq-sup > .mq-sup-inner {
+        vertical-align: 0;
+      }
+      & > .mq-sub {
+        margin-left: -0.25em;
+      }
+    }
+    .mq-large-operator {
+      .inline-block;
+      position: relative;
+      padding: 0 0 0 1em; // reserve space for big
+      text-align: left;
+      vertical-align: middle;
+      margin-bottom: 0.06em;
+      margin-top: -0.06em;
+    }
+    .mq-large-operator > big {
+      position: absolute;
+      left: 0;
+      top: 50%;
+      -moz-transform: translateY(-50%);
+      -o-transform: translateY(-50%);
+      -webkit-transform: translateY(-50%);
+      -ms-transform: translateY(-50%);
+      transform: translateY(-50%);
+      display: block;
+      float: none;
+      margin: 0;
+    }
+    .mq-large-operator > .mq-to,
+    .mq-large-operator > .mq-from {
+      display: block;
+      float: none;
+      width: auto;
+      text-align: left;
+    }
+  }
+  // .mq-to and .mq-from get data-mathstyle set by JS (scriptstyle of operator's context),
+  // so the existing [data-mathstyle='S'/'SS'] font-size rules apply automatically.
+
+  [data-mathstyle='S'],
+  [data-mathstyle='SS'] {
+    .mq-binary-operator, .mq-relation {
+      padding: 0;
+    }
+  }
+
+  .mq-fraction[data-mathstyle='S'],
+  .mq-fraction[data-mathstyle='SS'] {
+    .mq-numerator,
+    .mq-denominator {
+      padding: 0 0.1em;
+    }
+  }
+
+  [data-mathstyle='S'] .mq-supsub.mq-sup-only {
+    vertical-align: 0.5em;
+  }
+
+  [data-mathstyle='SS'] .mq-supsub.mq-sup-only {
+    vertical-align: 0.35em;
   }
 }
 

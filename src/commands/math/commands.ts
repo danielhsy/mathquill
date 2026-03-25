@@ -696,6 +696,10 @@ class SupSub extends MathCommand {
       }
       MathBlock.prototype.write.call(this, cursor, ch);
     };
+    (this.domFrag().oneElement() as HTMLElement).setAttribute(
+      'data-mathstyle',
+      getMathstyle(this)
+    );
   }
   moveTowards(dir: Direction, cursor: Cursor, updown?: 'up' | 'down') {
     if (cursor.options.autoSubscriptNumerals && !this.sup) {
@@ -1019,6 +1023,19 @@ class SummationNotation extends MathCommand {
     this.upInto = endsR;
     endsL.upOutOf = endsR;
     endsR.downOutOf = endsL;
+
+    // Limits are rendered in scriptstyle (one level deeper than the operator's context).
+    const opStyle = getMathstyle(this);
+    const limitStyle: 'S' | 'SS' =
+      opStyle === 'D' || opStyle === 'T' ? 'S' : 'SS';
+    const el = this.domFrag().oneElement() as HTMLElement;
+    const toEl = el.querySelector('.mq-to') as HTMLElement | null;
+    const fromEl = el.querySelector('.mq-from') as HTMLElement | null;
+    if (toEl) toEl.setAttribute('data-mathstyle', limitStyle);
+    if (fromEl) fromEl.setAttribute('data-mathstyle', limitStyle);
+    // Integral uses a hard-coded .mq-supsub in its template rather than .mq-to/.mq-from.
+    const supsubEl = el.querySelector('.mq-supsub') as HTMLElement | null;
+    if (supsubEl) supsubEl.setAttribute('data-mathstyle', limitStyle);
   }
 }
 
@@ -1064,6 +1081,22 @@ LatexCmds['∫'] =
         MathCommand.prototype.createLeftOf.call(this, cursor);
       }
     };
+// Returns the math style that content INSIDE `node` should be rendered in,
+// by walking up the MQ tree. Uses ctrlSeq identification (same technique as
+// getFracDepth()) so it works regardless of finalizeTree() call order.
+function getMathstyle(node: NodeRef): 'D' | 'T' | 'S' | 'SS' {
+  if (!node || !(node instanceof MQNode)) return 'D';
+  const parentStyle = getMathstyle(node.parent);
+  const ctrlSeq = node.ctrlSeq || '';
+  if (ctrlSeq.toLowerCase().indexOf('frac') >= 0) {
+    return parentStyle === 'D' ? 'T' : parentStyle === 'T' ? 'S' : 'SS';
+  }
+  if (ctrlSeq === '_{...}^{...}') {
+    return parentStyle === 'D' || parentStyle === 'T' ? 'S' : 'SS';
+  }
+  return parentStyle;
+}
+
 var Fraction =
   (LatexCmds.frac =
   LatexCmds.dfrac =
@@ -1097,6 +1130,10 @@ var Fraction =
         } else {
           this.mathspeakTemplate = ['StartFraction,', 'Over', ', EndFraction'];
         }
+        (this.domFrag().oneElement() as HTMLElement).setAttribute(
+          'data-mathstyle',
+          getMathstyle(this)
+        );
       }
 
       mathspeak(opts?: MathspeakOptions) {
@@ -1444,6 +1481,12 @@ class NthRoot extends SquareRoot {
         ', End Root'
       );
     }
+  }
+  finalizeTree() {
+    const nthEl = (this.domFrag().oneElement() as HTMLElement).querySelector(
+      '.mq-nthroot'
+    ) as HTMLElement | null;
+    if (nthEl) nthEl.setAttribute('data-mathstyle', 'SS');
   }
   deleteTowards(dir: Direction, cursor: Cursor) {
     MathCommand.prototype.deleteTowards.call(this, dir, cursor);

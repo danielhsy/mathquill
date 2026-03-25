@@ -142,7 +142,7 @@ dev: css font js
 js: $(BUILD_JS)
 uglify: $(UGLY_JS)
 css: $(BUILD_CSS)
-# Build all built-in fonts (NCM + STIX2) and the active font selection
+# Build all built-in fonts and the active font selection
 fonts: $(NCM_CSS) $(STX_CSS) $(FONT_CSS)
 # Build only the selected font (faster; also entry point for custom fonts)
 font: $(BUILD_DIR)/mathquill-$(MATH_FONT).css $(FONT_CSS)

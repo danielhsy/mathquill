@@ -1,4 +1,4 @@
-// MathJax STIX2 — Mathquill font CSS
+// MathJax STIX2 — MathQuill font CSS
 //
 // Font path is configurable at compile time:
 //   lessc --modify-var="stix2-font-path=../my/path" src/css/fonts/stix2.less
@@ -111,3 +111,11 @@
 // Large operators (\sum \int etc.) — LO has specially sized operator glyphs
 .mq-math-mode .mq-large-operator big,
 .mq-math-mode .mq-int > big             { font-family: 'MJX-STX-LO', 'MJX-STX-N', serif; }
+
+// Non-display style: large operators use N (inline-sized glyphs), not LO
+.mq-math-mode [data-mathstyle='T'] .mq-large-operator big,
+.mq-math-mode [data-mathstyle='S'] .mq-large-operator big,
+.mq-math-mode [data-mathstyle='SS'] .mq-large-operator big,
+.mq-math-mode [data-mathstyle='T'] .mq-int > big,
+.mq-math-mode [data-mathstyle='S'] .mq-int > big,
+.mq-math-mode [data-mathstyle='SS'] .mq-int > big { font-family: 'MJX-STX-N', serif; }
