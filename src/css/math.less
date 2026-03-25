@@ -127,7 +127,7 @@
   // TODO [Han]: Why do we have to special-case .font?
   b,
   b.mq-font {
-    font-weight: bolder;
+    font-weight: normal;
   }
 
   var {
@@ -136,18 +136,17 @@
 
   i,
   i.mq-font {
-    font-style: italic;
+    font-style: normal;
   }
 
 
   big {
-    font-size: 150%;
+    font-size: 100%;
   }
 
   .mq-int {
     > big {
       display: inline-block;
-      vertical-align: -0.16em;
     }
 
     > .mq-supsub {
@@ -170,11 +169,9 @@
   }
 
   .mq-sans-serif {
-    font-family: sans-serif;
   }
 
   .mq-monospace {
-    font-family: monospace;
   }
 
   .mq-overline {
@@ -406,12 +403,11 @@
   }
 
   .mq-large-operator {
-    vertical-align: -0.2em;
     padding: 0.2em;
     text-align: center;
 
     big {
-      margin: 0.0667em 0;
+      margin: 0.2em 0;
     }
     .mq-from,
     big,
@@ -431,7 +427,6 @@
   &,
   .mq-editable-field {
     cursor: text;
-    font-family: STIX Two Math, serif;
   }
 
   .mq-overarc {

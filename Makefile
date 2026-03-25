@@ -67,6 +67,32 @@ CSS_DIR = $(SRC_DIR)/css
 CSS_MAIN = $(CSS_DIR)/main.less
 CSS_SOURCES = $(shell find $(CSS_DIR) -name '*.less')
 
+# Font build configuration.
+# Override the font selection at build time: make MATH_FONT=stix2
+# Custom fonts: add src/css/fonts/myfont.less, then: make MATH_FONT=myfont font
+MATH_FONT ?= ncm
+
+NCM_FONT_LESS = $(CSS_DIR)/fonts/ncm.less
+STX_FONT_LESS = $(CSS_DIR)/fonts/stix2.less
+NCM_CSS       = $(BUILD_DIR)/mathquill-ncm.css
+STX_CSS       = $(BUILD_DIR)/mathquill-stix2.css
+FONT_CSS      = $(BUILD_DIR)/mathquill-font.css
+
+NCM_FONT_DIR  = $(BUILD_DIR)/fonts/ncm
+STX_FONT_DIR  = $(BUILD_DIR)/fonts/stix2
+# Font packages are not npm dependencies — install manually before running font targets:
+#   npm install @mathjax/mathjax-newcm-font   (for NCM)
+#   npm install @mathjax/mathjax-stix2-font   (for STIX2)
+NCM_SRC       = ./node_modules/@mathjax/mathjax-newcm-font/chtml/woff2
+STX_SRC       = ./node_modules/@mathjax/mathjax-stix2-font/chtml/woff2
+
+NCM_FONTS = mjx-ncm-n.woff2 mjx-ncm-mi.woff2 mjx-ncm-i.woff2 mjx-ncm-b.woff2 \
+            mjx-ncm-ss.woff2 mjx-ncm-m.woff2 mjx-ncm-ds.woff2 mjx-ncm-f.woff2 \
+            mjx-ncm-s.woff2 mjx-ncm-lo.woff2
+STX_FONTS = mjx-stx-n.woff2 mjx-stx-mi.woff2 mjx-stx-i.woff2 mjx-stx-b.woff2 \
+            mjx-stx-ss.woff2 mjx-stx-m.woff2 mjx-stx-ds.woff2 mjx-stx-f.woff2 \
+            mjx-stx-s.woff2 mjx-stx-lo.woff2
+
 
 TEST_SUPPORT = ./test/support/assert.ts ./test/support/trigger-event.ts ./test/support/jquery-stub.ts
 UNIT_TESTS = ./test/unit/*.test.js ./test/unit/*.test.ts
@@ -107,15 +133,19 @@ BUILD_DIR_EXISTS = $(BUILD_DIR)/.exists--used_by_Makefile
 # -*- Build tasks -*-
 #
 
-.PHONY: all basic dev js uglify css clean setup-gitconfig prettify-all
-all: css uglify
+.PHONY: all basic dev js uglify css fonts font convert-fonts clean setup-gitconfig prettify-all
+all: css font uglify
 basic: $(UGLY_BASIC_JS) $(BASIC_CSS)
 unminified_basic: $(BASIC_JS) $(BASIC_CSS)
 # dev is like all, but without minification
-dev: css js
+dev: css font js
 js: $(BUILD_JS)
 uglify: $(UGLY_JS)
 css: $(BUILD_CSS)
+# Build all built-in fonts (NCM + STIX2) and the active font selection
+fonts: $(NCM_CSS) $(STX_CSS) $(FONT_CSS)
+# Build only the selected font (faster; also entry point for custom fonts)
+font: $(BUILD_DIR)/mathquill-$(MATH_FONT).css $(FONT_CSS)
 clean:
 	rm -rf $(BUILD_DIR)
 # This adds an entry to your local .git/config file that looks like this:
@@ -152,6 +182,30 @@ $(BASIC_CSS): $(CSS_SOURCES) $(NODE_MODULES_INSTALLED) $(BUILD_DIR_EXISTS)
 	$(LESSC) --modify-var="basic=true" $(LESS_OPTS) $(CSS_MAIN) > $@
 	perl -pi -e s/mq-/$(MQ_CLASS_PREFIX)mq-/g $@
 	perl -pi -e s/{VERSION}/v$(VERSION)/ $@
+
+$(NCM_CSS): $(NCM_FONT_LESS) $(NODE_MODULES_INSTALLED) $(BUILD_DIR_EXISTS)
+	mkdir -p $(NCM_FONT_DIR)
+	cp $(addprefix $(NCM_SRC)/,$(NCM_FONTS)) $(NCM_FONT_DIR)/
+	$(LESSC) $(LESS_OPTS) $(NCM_FONT_LESS) > $@
+
+$(STX_CSS): $(STX_FONT_LESS) $(NODE_MODULES_INSTALLED) $(BUILD_DIR_EXISTS)
+	mkdir -p $(STX_FONT_DIR)
+	cp $(addprefix $(STX_SRC)/,$(STX_FONTS)) $(STX_FONT_DIR)/
+	$(LESSC) $(LESS_OPTS) $(STX_FONT_LESS) > $@
+
+# Active font CSS — whichever MATH_FONT selects (default: ncm)
+$(FONT_CSS): $(BUILD_DIR)/mathquill-$(MATH_FONT).css
+	cp $< $@
+
+# WOFF2 → OTF/EOT/SVG conversion (not in default build; requires external tools)
+# Toolchain: woff2 CLI (WOFF2→OTF), ttf2eot (OTF→EOT), fonttools (OTF→SVG)
+convert-fonts: $(NCM_CSS) $(STX_CSS)
+	@echo "Convert WOFF2 → OTF/EOT/SVG for each font in build/fonts/ncm/ and build/fonts/stix2/"
+	@echo "Requires: woff2_decompress, ttf2eot, python3 -m fonttools"
+	@echo "Example per file:"
+	@echo "  woff2_decompress build/fonts/ncm/mjx-ncm-n.woff2"
+	@echo "  ttf2eot < build/fonts/ncm/mjx-ncm-n.otf > build/fonts/ncm/mjx-ncm-n.eot"
+	@echo "  python3 -m fonttools otf2svg build/fonts/ncm/mjx-ncm-n.otf"
 
 $(NODE_MODULES_INSTALLED): package.json
 	test -e $(NODE_MODULES_INSTALLED) || rm -rf ./node_modules/ # robust against previous botched npm install

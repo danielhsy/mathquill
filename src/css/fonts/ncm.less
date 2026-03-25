@@ -1,0 +1,113 @@
+// MathJax New Computer Modern — Mathquill font CSS
+//
+// Font path is configurable at compile time:
+//   lessc --modify-var="ncm-font-path=../my/path" src/css/fonts/ncm.less
+//
+// Fonts needed (10): N MI I B SS M DS F S LO
+@ncm-font-path: './fonts/ncm';
+
+@font-face {
+  font-family: 'MJX-NCM-N';
+  src: url('@{ncm-font-path}/mjx-ncm-n.eot');
+  src: url('@{ncm-font-path}/mjx-ncm-n.eot?#iefix') format('embedded-opentype'),
+       url('@{ncm-font-path}/mjx-ncm-n.woff2') format('woff2'),
+       url('@{ncm-font-path}/mjx-ncm-n.svg#MJXNCMn') format('svg');
+}
+@font-face {
+  font-family: 'MJX-NCM-MI';
+  src: url('@{ncm-font-path}/mjx-ncm-mi.eot');
+  src: url('@{ncm-font-path}/mjx-ncm-mi.eot?#iefix') format('embedded-opentype'),
+       url('@{ncm-font-path}/mjx-ncm-mi.woff2') format('woff2'),
+       url('@{ncm-font-path}/mjx-ncm-mi.svg#MJXNCMmi') format('svg');
+}
+@font-face {
+  font-family: 'MJX-NCM-I';
+  src: url('@{ncm-font-path}/mjx-ncm-i.eot');
+  src: url('@{ncm-font-path}/mjx-ncm-i.eot?#iefix') format('embedded-opentype'),
+       url('@{ncm-font-path}/mjx-ncm-i.woff2') format('woff2'),
+       url('@{ncm-font-path}/mjx-ncm-i.svg#MJXNCMi') format('svg');
+}
+@font-face {
+  font-family: 'MJX-NCM-B';
+  src: url('@{ncm-font-path}/mjx-ncm-b.eot');
+  src: url('@{ncm-font-path}/mjx-ncm-b.eot?#iefix') format('embedded-opentype'),
+       url('@{ncm-font-path}/mjx-ncm-b.woff2') format('woff2'),
+       url('@{ncm-font-path}/mjx-ncm-b.svg#MJXNCMb') format('svg');
+}
+@font-face {
+  font-family: 'MJX-NCM-SS';
+  src: url('@{ncm-font-path}/mjx-ncm-ss.eot');
+  src: url('@{ncm-font-path}/mjx-ncm-ss.eot?#iefix') format('embedded-opentype'),
+       url('@{ncm-font-path}/mjx-ncm-ss.woff2') format('woff2'),
+       url('@{ncm-font-path}/mjx-ncm-ss.svg#MJXNCMss') format('svg');
+}
+@font-face {
+  font-family: 'MJX-NCM-M';
+  src: url('@{ncm-font-path}/mjx-ncm-m.eot');
+  src: url('@{ncm-font-path}/mjx-ncm-m.eot?#iefix') format('embedded-opentype'),
+       url('@{ncm-font-path}/mjx-ncm-m.woff2') format('woff2'),
+       url('@{ncm-font-path}/mjx-ncm-m.svg#MJXNCMm') format('svg');
+}
+@font-face {
+  font-family: 'MJX-NCM-DS';
+  src: url('@{ncm-font-path}/mjx-ncm-ds.eot');
+  src: url('@{ncm-font-path}/mjx-ncm-ds.eot?#iefix') format('embedded-opentype'),
+       url('@{ncm-font-path}/mjx-ncm-ds.woff2') format('woff2'),
+       url('@{ncm-font-path}/mjx-ncm-ds.svg#MJXNCMds') format('svg');
+}
+@font-face {
+  font-family: 'MJX-NCM-F';
+  src: url('@{ncm-font-path}/mjx-ncm-f.eot');
+  src: url('@{ncm-font-path}/mjx-ncm-f.eot?#iefix') format('embedded-opentype'),
+       url('@{ncm-font-path}/mjx-ncm-f.woff2') format('woff2'),
+       url('@{ncm-font-path}/mjx-ncm-f.svg#MJXNCMf') format('svg');
+}
+@font-face {
+  font-family: 'MJX-NCM-S';
+  src: url('@{ncm-font-path}/mjx-ncm-s.eot');
+  src: url('@{ncm-font-path}/mjx-ncm-s.eot?#iefix') format('embedded-opentype'),
+       url('@{ncm-font-path}/mjx-ncm-s.woff2') format('woff2'),
+       url('@{ncm-font-path}/mjx-ncm-s.svg#MJXNCMs') format('svg');
+}
+@font-face {
+  font-family: 'MJX-NCM-LO';
+  src: url('@{ncm-font-path}/mjx-ncm-lo.eot');
+  src: url('@{ncm-font-path}/mjx-ncm-lo.eot?#iefix') format('embedded-opentype'),
+       url('@{ncm-font-path}/mjx-ncm-lo.woff2') format('woff2'),
+       url('@{ncm-font-path}/mjx-ncm-lo.svg#MJXNCMlo') format('svg');
+}
+
+// Default math: N covers all math alphanumeric Unicode chars + symbols
+.mq-math-mode,
+.mq-math-mode .mq-editable-field        { font-family: 'MJX-NCM-N', serif; }
+
+// \mathrm — upright roman, ASCII chars
+.mq-math-mode .mq-font.mq-roman         { font-family: 'MJX-NCM-N', serif; }
+
+// \mathit — math italic (𝑥 etc.); MI for ASCII italic, I for italic symbols, N fallback
+.mq-math-mode i.mq-font { font-family: 'MJX-NCM-MI', 'MJX-NCM-I', 'MJX-NCM-N', serif; }
+
+// \mathbf — bold; B covers bold Unicode chars + bold operators
+.mq-math-mode b.mq-font { font-family: 'MJX-NCM-B', 'MJX-NCM-N', serif; }
+
+// \boldsymbol — bold-italic; B covers bold operators, N fallback
+.mq-math-mode b.mq-font.mq-boldsymbol   { font-family: 'MJX-NCM-B', 'MJX-NCM-N', serif; }
+
+// \mathsf — sans-serif Unicode chars (𝗑 etc.)
+.mq-math-mode .mq-font.mq-sans-serif    { font-family: 'MJX-NCM-SS', 'MJX-NCM-N', serif; }
+
+// \mathtt — monospace Unicode chars (𝚡 etc.)
+.mq-math-mode .mq-font.mq-monospace     { font-family: 'MJX-NCM-M', 'MJX-NCM-N', serif; }
+
+// \mathbb — double-struck Unicode chars (𝕩 𝟚 etc.); B for bold operators
+.mq-math-mode b.mq-font.mq-double-struck { font-family: 'MJX-NCM-DS', 'MJX-NCM-B', 'MJX-NCM-N', serif; }
+
+// \mathfrak — fraktur Unicode chars (𝔵 etc.)
+.mq-math-mode .mq-font.mq-fraktur      { font-family: 'MJX-NCM-F', 'MJX-NCM-N', serif; }
+
+// \mathscr / \mathcal — script Unicode chars (𝓍 etc.); I for non-script symbols
+.mq-math-mode i.mq-font.mq-script      { font-family: 'MJX-NCM-S', 'MJX-NCM-I', 'MJX-NCM-N', serif; }
+
+// Large operators (\sum \int etc.) — LO has specially sized operator glyphs
+.mq-math-mode .mq-large-operator big,
+.mq-math-mode .mq-int > big             { font-family: 'MJX-NCM-LO', 'MJX-NCM-N', serif; }

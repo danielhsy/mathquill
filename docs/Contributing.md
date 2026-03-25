@@ -10,6 +10,27 @@ For developing on MathQuill, run `make dev`. This will skip minifying MathQuill,
 
 To run this smaller version, serve and load `mathquill-basic.{js,min.js,css}` and `fonts/Symbola-basic.{eot,ttf}` instead.
 
+## Fonts
+
+MathQuill renders math using MathJax-compatible font files. The font packages are **not** included as npm dependencies — install whichever you need before running font targets:
+
+```sh
+npm install @mathjax/mathjax-newcm-font   # New Computer Modern (default)
+npm install @mathjax/mathjax-stix2-font   # STIX Two Math
+```
+
+Then build the fonts alongside the JS/CSS:
+
+```sh
+make dev            # builds JS, CSS, and the default NCM font
+make MATH_FONT=stix2 dev   # builds with STIX2 instead
+make fonts          # builds both NCM and STIX2 (e.g. for a release)
+```
+
+Each font build produces a separate CSS file (`build/mathquill-ncm.css`, `build/mathquill-stix2.css`) and copies the WOFF2 files into `build/fonts/<name>/`. Load both `mathquill.css` and the font CSS of your choice in your page.
+
+To use a custom font, create `src/css/fonts/myfont.less` following the pattern of `ncm.less` or `stix2.less`, then run `make MATH_FONT=myfont font`.
+
 # Testing
 
 Run `make test`, which builds `mathquill.test.js`. Open `test/unit.html` in your browser to see the result of the unit tests. Open `test/visual.html` to see how a variety of expressions are rendering on your branch.

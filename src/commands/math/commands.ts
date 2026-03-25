@@ -320,8 +320,9 @@ LatexCmds.mathrm = class extends MathVariantStyle {
     return true;
   }
 };
+// Italic is handled through CSS `font-family`.
 LatexCmds.mathit = () =>
-  new MathVariantStyle('\\mathit', 'italic', 'Italic Font', 'i');
+  new MathVariantStyle('\\mathit', 'roman', 'Italic Font', 'i');
 LatexCmds.mathbf = () =>
   new MathVariantStyle('\\mathbf', 'bold', 'Bold Font', 'b');
 LatexCmds.mathsf = () =>
@@ -329,13 +330,13 @@ LatexCmds.mathsf = () =>
 LatexCmds.mathtt = () =>
   new MathVariantStyle('\\mathtt', 'monospace', 'Monospace Font', 'span', 'mq-monospace');
 LatexCmds.boldsymbol = LatexCmds.bm = () =>
-  new MathVariantStyle('\\boldsymbol', 'bold-italic', 'Bold Italic Font', 'b', 'mq-boldsymbol');
+  new MathVariantStyle('\\boldsymbol', 'bold-italic', 'Bold Font', 'b', 'mq-boldsymbol');
 LatexCmds.mathbb = () =>
-  new MathVariantStyle('\\mathbb', 'double-struck', 'Double-struck Font', 'span', 'mq-double-struck');
+  new MathVariantStyle('\\mathbb', 'double-struck', 'Double-struck Font', 'b', 'mq-double-struck');
 LatexCmds.mathfrak = () =>
   new MathVariantStyle('\\mathfrak', 'fraktur', 'Fraktur Font', 'span', 'mq-fraktur');
 LatexCmds.mathscr = LatexCmds.mathcal = () =>
-  new MathVariantStyle('\\mathscr', 'script', 'Script Font', 'span', 'mq-script');
+  new MathVariantStyle('\\mathscr', 'script', 'Script Font', 'i', 'mq-script');
 //text-decoration
 LatexCmds.underline = () =>
   new Style(
