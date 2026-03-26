@@ -78,8 +78,9 @@ class MathElement extends MQNode {
   reflow() {
     // if element reflows, and right is supsub, that needs to reflow too
     // to recalculate layout
-    if (this[R] instanceof SupSub) {
-      this[R].reflow();
+    const right = this[R];
+    if (right instanceof SupSub) {
+      right.reflow();
     }
   }
 }

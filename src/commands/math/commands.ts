@@ -362,8 +362,11 @@ class SupSub extends MathCommand {
           var src = this[supsub],
             dest = thisDir[supsub];
           if (!src) continue;
-          if (!dest) thisDir.addBlock(src.disown());
-          else if (!src.isEmpty()) {
+          if (!dest) {
+            thisDir.addBlock(src.disown());
+            src.blur(cursor);
+            thisDir.reflow();
+          } else if (!src.isEmpty()) {
             // ins src children at -dir end of dest
             src
               .domFrag()
@@ -530,6 +533,7 @@ class SupSub extends MathCommand {
             cmd.domFrag().addClass('mq-sup-only').children().last().remove();
           }
           this.remove();
+          cmd.reflow();
         };
       })(
         this,
@@ -539,8 +543,9 @@ class SupSub extends MathCommand {
       );
   }
   reflow() {
-    if (this[L] && this.blocks) {
-      const base = this[L].domFrag().oneElement();
+    const left = this[L];
+    if (left && this.blocks) {
+      const base = left.domFrag().oneElement();
       const supsub = this.domFrag().oneElement();
       supsub.style.verticalAlign = '0px';
       const baseRect = base.getBoundingClientRect();
