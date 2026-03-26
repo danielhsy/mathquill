@@ -197,6 +197,9 @@ class Cursor extends Point {
         .adopt(greatgramp, leftward, rightward)
         .each(function (cousin) {
           cousin.domFrag().insertBefore(gramp.domFrag());
+          cousin.postOrder(function (node) {
+            node.refreshMathstyle?.();
+          });
           return true;
         });
 

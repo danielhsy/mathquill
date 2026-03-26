@@ -411,6 +411,10 @@ class NodeBase {
     }
   }
   finalizeTree(_options: CursorOptions, _dir?: Direction) {}
+  mathstyleForContent?: (
+    parentStyle: 'D' | 'T' | 'S' | 'SS'
+  ) => 'D' | 'T' | 'S' | 'SS';
+  refreshMathstyle?: () => void;
   contactWeld(_cursor: Cursor, _dir?: Direction) {}
   blur(_cursor?: Cursor) {}
   focus() {}

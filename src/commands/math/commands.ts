@@ -696,6 +696,11 @@ class SupSub extends MathCommand {
       }
       MathBlock.prototype.write.call(this, cursor, ch);
     };
+    this.refreshMathstyle();
+  }
+  mathstyleForContent = (parentStyle: 'D' | 'T' | 'S' | 'SS'): 'S' | 'SS' =>
+    parentStyle === 'D' || parentStyle === 'T' ? 'S' : 'SS';
+  refreshMathstyle() {
     (this.domFrag().oneElement() as HTMLElement).setAttribute(
       'data-mathstyle',
       getMathstyle(this)
@@ -855,6 +860,9 @@ class SupSub extends MathCommand {
             .domFrag()
             .insDirOf(-dir as Direction, cursor.domFrag());
           cursor[-dir as Direction] = end;
+          cursor.parent.postOrder(function (node: MQNode) {
+            node.refreshMathstyle?.();
+          });
         }
         cmd.supsub = oppositeSupsub;
         delete cmd[supsub];
@@ -1024,10 +1032,14 @@ class SummationNotation extends MathCommand {
     endsL.upOutOf = endsR;
     endsR.downOutOf = endsL;
 
-    // Limits are rendered in scriptstyle (one level deeper than the operator's context).
-    const opStyle = getMathstyle(this);
-    const limitStyle: 'S' | 'SS' =
-      opStyle === 'D' || opStyle === 'T' ? 'S' : 'SS';
+    this.refreshMathstyle();
+  }
+  mathstyleForContent = (parentStyle: 'D' | 'T' | 'S' | 'SS'): 'S' | 'SS' =>
+    parentStyle === 'D' || parentStyle === 'T' ? 'S' : 'SS';
+  refreshMathstyle() {
+    // mathstyleForContent already encodes the D→S / T→S / S→SS transformation,
+    // so getMathstyle(this) returns the correct style for the limits directly.
+    const limitStyle = getMathstyle(this);
     const el = this.domFrag().oneElement() as HTMLElement;
     const toEl = el.querySelector('.mq-to') as HTMLElement | null;
     const fromEl = el.querySelector('.mq-from') as HTMLElement | null;
@@ -1087,14 +1099,7 @@ LatexCmds['∫'] =
 function getMathstyle(node: NodeRef): 'D' | 'T' | 'S' | 'SS' {
   if (!node || !(node instanceof MQNode)) return 'D';
   const parentStyle = getMathstyle(node.parent);
-  const ctrlSeq = node.ctrlSeq || '';
-  if (ctrlSeq.toLowerCase().indexOf('frac') >= 0) {
-    return parentStyle === 'D' ? 'T' : parentStyle === 'T' ? 'S' : 'SS';
-  }
-  if (ctrlSeq === '_{...}^{...}') {
-    return parentStyle === 'D' || parentStyle === 'T' ? 'S' : 'SS';
-  }
-  return parentStyle;
+  return node.mathstyleForContent?.(parentStyle) ?? parentStyle;
 }
 
 var Fraction =
@@ -1130,6 +1135,13 @@ var Fraction =
         } else {
           this.mathspeakTemplate = ['StartFraction,', 'Over', ', EndFraction'];
         }
+        this.refreshMathstyle();
+      }
+      mathstyleForContent = (
+        parentStyle: 'D' | 'T' | 'S' | 'SS'
+      ): 'D' | 'T' | 'S' | 'SS' =>
+        parentStyle === 'D' ? 'T' : parentStyle === 'T' ? 'S' : 'SS';
+      refreshMathstyle() {
         (this.domFrag().oneElement() as HTMLElement).setAttribute(
           'data-mathstyle',
           getMathstyle(this)
@@ -1487,6 +1499,12 @@ class NthRoot extends SquareRoot {
       '.mq-nthroot'
     ) as HTMLElement | null;
     if (nthEl) nthEl.setAttribute('data-mathstyle', 'SS');
+    this.getEnd(L).mathstyleForContent = () => 'SS';
+    // Re-run refresh on index-block descendants: their finalizeTree ran before
+    // mathstyleForContent was set (post-order), so data-mathstyle may be stale.
+    this.getEnd(L).postOrder(function (node: MQNode) {
+      node.refreshMathstyle?.();
+    });
   }
   deleteTowards(dir: Direction, cursor: Cursor) {
     MathCommand.prototype.deleteTowards.call(this, dir, cursor);
@@ -2018,7 +2036,18 @@ class Binomial extends DelimsNode {
   mathspeakTemplate = ['StartBinomial,', 'Choose', ', EndBinomial'];
   ariaLabel = 'binomial';
 
+  mathstyleForContent = (
+    parentStyle: 'D' | 'T' | 'S' | 'SS'
+  ): 'D' | 'T' | 'S' | 'SS' =>
+    parentStyle === 'D' ? 'T' : parentStyle === 'T' ? 'S' : 'SS';
+  refreshMathstyle() {
+    (this.domFrag().oneElement() as HTMLElement).setAttribute(
+      'data-mathstyle',
+      getMathstyle(this)
+    );
+  }
   finalizeTree() {
+    this.refreshMathstyle();
     const endsL = this.getEnd(L);
     const endsR = this.getEnd(R);
     this.upInto = endsR.upOutOf = endsL;
